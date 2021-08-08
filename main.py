@@ -23,14 +23,14 @@ one should purchase to get an equal-weight version of the index fund.
 stocks = pd.read_csv("sp_500_stocks.csv")
 
 
-symbol = "AAPL"
-api_url = f"https://sandbox.iexapis.com/stable/stock/{symbol}/quote/?token={IEX_CLOUD_API_TOKEN}"
-data = requests.get(api_url).json() # make it easily accessible
-# build a pd dataframe with several columns
-price = data['latestPrice'] # all data here is randomized
-market_cap = data["marketCap"]
+# symbol = "AAPL"
+# api_url = f"https://sandbox.iexapis.com/stable/stock/{symbol}/quote/?token={IEX_CLOUD_API_TOKEN}"
+# data = requests.get(api_url).json() # make it easily accessible
+# # build a pd dataframe with several columns
+# price = data['latestPrice'] # all data here is randomized
+# market_cap = data["marketCap"]
 
-my_columns = ['Ticker', 'Stock Price', 'Market Capitalization', 'Number of Shares to buy']
+my_columns = ['Ticker', 'Stock Price', 'Market Capitalization', 'Number of Shares to Buy']
 final_dataframe = pd.DataFrame(columns=my_columns)
 
 # batch api
@@ -53,20 +53,14 @@ for symbol_string in symbol_strings:
         # in data ['quote'] is required bc it is the API endpoint; we're looping thprugh API calls
         final_dataframe = final_dataframe.append(pd.Series([symbol, data[symbol]['quote']['latestPrice'], data[symbol]['quote']['marketCap'],'N/A'], index = my_columns),ignore_index=True)
 
-# portfolio_size = input('Enter the value of your portfolio')
-# try:
-#   val = float(portfolio_size)
-# except ValueError:
-#   print('That's not a number! \nPlease enter a valid integer.')
-#   portfolio_size = input('Enter the value of your portfolio')
-#   val = float(portfolio_size)
+
 val = 1000
 position_size = val/(len(final_dataframe.index))
 for i in range(0, len(final_dataframe.index)):
     final_dataframe.loc[i, 'Number Of Shares to Buy'] = math.floor(position_size / final_dataframe['Stock Price'][i])
 
-writer = pd.ExcelWriter('recommended trades.xlsx', engine='xlswriter')
-final_dataframe.to_excel(writer, 'recommended trades', index=False)
+writer = pd.ExcelWriter('Recommended Trades.xlsx', engine='xlsxwriter')
+final_dataframe.to_excel(writer, 'Recommended Trades', index=False)
 
 # color scheme for excel sheet, using html hex codes
 background_color = '#0a0a23'
@@ -74,7 +68,7 @@ font_color = '#ffffff'
 
 string_format = writer.book.add_format(
     {
-        'font_color':font_color,
+        'font_color': font_color,
         'bg_color': background_color,
         "border": 1
     }
@@ -83,7 +77,7 @@ string_format = writer.book.add_format(
 dollar_format = writer.book.add_format(
     {
         'num_format': '$0.00',
-        'font_color':font_color,
+        'font_color': font_color,
         'bg_color': background_color,
         "border": 1
     }
@@ -92,10 +86,21 @@ dollar_format = writer.book.add_format(
 integer_format = writer.book.add_format(
     {
         'num_format': '0',
-        'font_color':font_color,
+        'font_color': font_color,
         'bg_color': background_color,
         "border": 1
     }
 )
 
-writer.sheets['Recommended Trades'].set_column('A:A',18, string_format)
+writer.save()
+column_formats = {
+                    'A': ['Ticker', string_format],
+                    'B': ['Price', dollar_format],
+                    'C': ['Market Capitalization', dollar_format],
+                    'D': ['Number of Shares to Buy', integer_format]
+                    }
+
+for column in column_formats.keys():
+    writer.sheets['Recommended Trades'].set_column(f'{column}:{column}', 20, column_formats[column][1])
+    writer.sheets['Recommended Trades'].write(f'{column}1', column_formats[column][0], string_format)
+writer.save()
