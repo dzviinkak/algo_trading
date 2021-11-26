@@ -1,1 +1,4 @@
 oanda.cfg
+*.idea
+*_pycache_
+/equal_weights_sp500/secrets.py
